@@ -7,6 +7,12 @@
 
 #include <DirectXMath.h>
 
+// This code assumes files are in "ImGui" subfolder!
+// Adjust as necessary for your own folder structure and project setup
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
+
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
@@ -47,6 +53,16 @@ void Game::Initialize()
 		Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
 		Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	// Initialize ImGui itself & platform/renderer backends
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplWin32_Init(Window::Handle());
+	ImGui_ImplDX11_Init(Graphics::Device.Get(), Graphics::Context.Get());
+	// Pick a style (uncomment one of these 3)
+	//ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+	ImGui::StyleColorsClassic();
 }
 
 
@@ -58,7 +74,10 @@ void Game::Initialize()
 // --------------------------------------------------------
 Game::~Game()
 {
-
+	// ImGui clean up
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
 
@@ -240,6 +259,12 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	// Update the ImGui
+	UIUpdate(deltaTime);
+
+	// Build the custom UI
+	BuildUI();
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
@@ -257,7 +282,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		// Clear the back buffer (erase what's on screen) and depth buffer
 		const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	color);
+		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
@@ -291,6 +316,10 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These should happen exactly ONCE PER FRAME
 	// - At the very end of the frame (after drawing *everything*)
 	{
+		// Draw ImGui on top of everything else
+		ImGui::Render(); // Turns this frame’s UI into renderable triangles
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
+
 		// Present at the end of the frame
 		bool vsync = Graphics::VsyncState();
 		Graphics::SwapChain->Present(
@@ -305,5 +334,74 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
+// --------------------------------------------------------
+// Create new frame for the UI
+// --------------------------------------------------------
+void Game::UIUpdate(float deltaTime) 
+{
+	// Feed fresh data to ImGui
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = deltaTime;
+	io.DisplaySize.x = (float)Window::Width();
+	io.DisplaySize.y = (float)Window::Height();
+
+	// Reset the frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	// Determine new input capture
+	Input::SetKeyboardCapture(io.WantCaptureKeyboard);
+	Input::SetMouseCapture(io.WantCaptureMouse);
+}
+
+// --------------------------------------------------------
+// Build Custom UI
+// --------------------------------------------------------
+void Game::BuildUI() 
+{
+	// Check if we want to show demo window
+	if (showDemoUI) {
+		ImGui::ShowDemoWindow();
+	}
+
+	ImGui::Begin("Abby Program Analyzer"); // Everything after is part of the window
+
+	ImGui::Spacing();
+
+	// Replace the %f with the next parameter, and format as a float
+	ImGui::BulletText("Framerate: %f fps", ImGui::GetIO().Framerate);
+
+	// Replace each % d with the next parameter, and format as decimal integers
+	// The "x" will be printed as-is between the numbers, like so: 800x600
+	ImGui::BulletText("Window Resolution: %dx%d", Window::Width(), Window::Height());
+
+	ImGui::Spacing();
+	
+	// Can create a 3 or 4-component color editors, too!
+	// - Notice the two different function names below
+	ImGui::ColorEdit4("RGBA color editor", &backgroundColor[0]);
+
+	ImGui::Spacing();
+
+	if (ImGui::Button("Toggle Demo Display"))
+	{
+		// Toggle the state of show demo ui
+		showDemoUI = !showDemoUI;
+	}
+
+	ImGui::Spacing();
+
+	static bool check = true;
+	ImGui::Checkbox("Box Checked", &check);
+
+	ImGui::Spacing();
+
+	static int slider = 0;
+	ImGui::SliderInt("Slider int", &slider, -100, 100);
+
+	
+	ImGui::End(); // Ends the current window
+}
 
 

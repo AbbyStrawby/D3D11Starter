@@ -51,8 +51,8 @@ int WINAPI WinMain(
 #endif
 
 	// Set up app initialization details
-	unsigned int windowWidth = 1280;
-	unsigned int windowHeight = 720;
+	unsigned int windowWidth = 960;
+	unsigned int windowHeight = 540;
 	const wchar_t* windowTitle = L"Direct3D11 Game";
 	bool statsInTitleBar = true;
 	bool vsync = false;

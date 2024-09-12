@@ -2,6 +2,10 @@
 
 #include <d3d11.h>
 #include <wrl/client.h>
+#include <vector>
+#include <memory>
+
+#include "Mesh.h"
 
 class Game
 {
@@ -28,7 +32,9 @@ private:
 	void BuildUI();
 
 	bool showDemoUI;
-	float backgroundColor[4] = { 1.0f, 0.0f, 0.5f, 1.0f };
+	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
+
+	std::vector<std::shared_ptr<Mesh>> vMesh;
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the

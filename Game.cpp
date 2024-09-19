@@ -4,6 +4,7 @@
 #include "Input.h"
 #include "PathHelpers.h"
 #include "Window.h"
+#include "BufferStructs.h"
 
 #include <DirectXMath.h>
 
@@ -63,6 +64,32 @@ void Game::Initialize()
 	//ImGui::StyleColorsDark();
 	//ImGui::StyleColorsLight();
 	ImGui::StyleColorsClassic();
+
+	// Create a constant buffer for the vertex shader data
+
+	// Calculate size of the buffer
+	unsigned int size = sizeof(VertexShaderData);
+	size = (size + 15) / 16 * 16;
+
+	// Create constant buffer descripition
+	D3D11_BUFFER_DESC cbDesc = {};
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;	// We want a constant buffer
+	cbDesc.ByteWidth = size;						// Calculated size value, multiple of 16
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;	// We want to write data to this each frame
+	cbDesc.Usage = D3D11_USAGE_DYNAMIC;				// Contents will be changed after creation
+
+	Graphics::Device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
+
+	// Bind the constant buffer to the correct slot for the vertex shader to use
+	Graphics::Context->VSSetConstantBuffers(
+		0,									// Which register to bind to
+		1,									// How many buffers we're setting
+		vsConstantBuffer.GetAddressOf()		// Address of buffer(s) (just one since we're only using one)
+	);
+
+	// Create Initial Data for Vertex Shader
+	vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
+	vsData.offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
 }
 
 
@@ -282,6 +309,14 @@ void Game::Draw(float deltaTime, float totalTime)
 		const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		// Copy Data to the Vertex Shader 
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+		Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+
+		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+
+		Graphics::Context->Unmap(vsConstantBuffer.Get(), 0);
 	}
 
 	// DRAW geometry
@@ -383,6 +418,21 @@ void Game::BuildUI()
 
 		static int slider = 0;
 		ImGui::SliderInt("Slider int", &slider, -100, 100);
+
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Shader Values"))
+	{
+		// Create a drag slider for position offset values
+		ImGui::DragFloat3("Position", &vsData.offset.x, 0.01f);
+
+		ImGui::Spacing();
+
+		// Create a 4-component color editor for color tint
+		ImGui::ColorEdit4("Color Tint", &vsData.colorTint.x);
+
+		ImGui::Spacing();
 
 		ImGui::TreePop();
 	}

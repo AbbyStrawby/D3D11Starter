@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "Mesh.h"
+#include "BufferStructs.h"
 
 class Game
 {
@@ -31,9 +32,13 @@ private:
 	void UIUpdate(float deltaTime);
 	void BuildUI();
 
+	// UI fields
 	bool showDemoUI;
 	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 
+	VertexShaderData vsData;
+
+	// Field for storing mesh data
 	std::vector<std::shared_ptr<Mesh>> vMesh;
 
 	// Note the usage of ComPtr below
@@ -41,9 +46,8 @@ private:
 	//     Component Object Model, which DirectX objects do
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 
-	// Buffers to hold actual geometry data
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+	// Constant buffer related to vertex shader data
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;

@@ -85,11 +85,7 @@ void Game::Initialize()
 		0,									// Which register to bind to
 		1,									// How many buffers we're setting
 		vsConstantBuffer.GetAddressOf()		// Address of buffer(s) (just one since we're only using one)
-	);
-
-	// Create Initial Data for Vertex Shader
-	vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
-	vsData.offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
+	);	
 }
 
 
@@ -226,10 +222,10 @@ void Game::CreateGeometry()
 	// Mesh 2
 	Vertex vertices2[] =
 	{
-		{ XMFLOAT3(+0.5f, +0.7f, +0.0f), red },
-		{ XMFLOAT3(+0.7f, +0.7f, +0.0f), blue },
-		{ XMFLOAT3(+0.7f, +0.5f, +0.0f), green },
-		{ XMFLOAT3(+0.5f, +0.5f, +0.0f), none },
+		{ XMFLOAT3(-0.1f, +0.1f, +0.0f), red },
+		{ XMFLOAT3(+0.1f, +0.1f, +0.0f), blue },
+		{ XMFLOAT3(+0.1f, -0.1f, +0.0f), green },
+		{ XMFLOAT3(-0.1f, -0.1f, +0.0f), none },
 	};
 	unsigned int indices2[] =
 	{
@@ -240,12 +236,12 @@ void Game::CreateGeometry()
 	// Mesh 3
 	Vertex vertices3[] =
 	{
-		{ XMFLOAT3(-0.5f, +0.75f, +0.0f), pink },
-		{ XMFLOAT3(-0.4f, +0.6f, +0.0f), plink },
-		{ XMFLOAT3(-0.6f, +0.6f, +0.0f), plink },
-		{ XMFLOAT3(-0.3f, +0.75f, +0.0f), pink },
-		{ XMFLOAT3(-0.2f, +0.6f, +0.0f), plink },
-		{ XMFLOAT3(-0.4f, +0.3f, +0.0f), purple },
+		{ XMFLOAT3(-0.1f, +0.30f, +0.0f), pink },	// -.1, .30
+		{ XMFLOAT3(+0.0f, +0.15f, +0.0f), plink },	// 0, .15
+		{ XMFLOAT3(-0.2f, +0.15f, +0.0f), plink },	// -.2, .15
+		{ XMFLOAT3(+0.1f, +0.30f, +0.0f), pink },	// .1, .30
+		{ XMFLOAT3(+0.2f, +0.15f, +0.0f), plink },	// .2, .15
+		{ XMFLOAT3(+0.0f, -0.30f, +0.0f), purple },	// 0, -.30
 	};
 	unsigned int indices3[] =
 	{
@@ -254,6 +250,7 @@ void Game::CreateGeometry()
 		2, 4, 5
 	};
 
+	// Make the mesh objects
 	std::shared_ptr<Mesh> mesh1 = std::make_shared<Mesh>(
 		"Triangle", vertices1, ARRAYSIZE(vertices1), indices1, ARRAYSIZE(indices1)
 	);
@@ -264,9 +261,32 @@ void Game::CreateGeometry()
 		"Heart", vertices3, ARRAYSIZE(vertices3), indices3, ARRAYSIZE(indices3)
 	);
 
-	vMesh.push_back(mesh1);
-	vMesh.push_back(mesh2);
-	vMesh.push_back(mesh3);
+	// Add mesh objects to the list
+	meshes.push_back(mesh1);
+	meshes.push_back(mesh2);
+	meshes.push_back(mesh3);
+
+	// Make game entities
+	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(mesh1);
+	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(mesh2);
+	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(mesh3);
+	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(mesh3);
+	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(mesh3);
+
+	// Spread out some of the entities so they aren't all on top of one another
+	entity1->GetTransform()->MoveAbsolute(0, 0, 0.01f);
+	entity2->GetTransform()->MoveAbsolute(0, -0.8f, 0);
+	entity3->GetTransform()->MoveAbsolute(0.8f, -0.8f, 0);
+	entity3->GetTransform()->Scale(0.5f);
+	entity4->GetTransform()->MoveAbsolute(0, .4f, 0);
+	entity5->GetTransform()->MoveAbsolute(0, .4f, 0);
+
+	// Add entity objects to the list
+	entities.push_back(entity1);
+	entities.push_back(entity2);
+	entities.push_back(entity3);
+	entities.push_back(entity4);
+	entities.push_back(entity5);
 }
 
 
@@ -293,6 +313,15 @@ void Game::Update(float deltaTime, float totalTime)
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
+
+	// Update Transformations
+	float scaleSize = (float)sin(totalTime * 2) * 0.2f + 0.8f;
+	entities[0]->GetTransform()->SetScale(scaleSize, scaleSize, scaleSize);
+	entities[0]->GetTransform()->Rotate(0, 0, deltaTime);
+
+	float moveDistance = (float)cos(totalTime) * 0.5f;
+	entities[3]->GetTransform()->SetPosition(moveDistance, 0.6f, 0);
+	entities[4]->GetTransform()->SetPosition(-moveDistance, 0.6f, 0);
 }
 
 
@@ -309,21 +338,13 @@ void Game::Draw(float deltaTime, float totalTime)
 		const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-		// Copy Data to the Vertex Shader 
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-		Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-
-		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
-		Graphics::Context->Unmap(vsConstantBuffer.Get(), 0);
 	}
 
 	// DRAW geometry
 	// Loop through and draw every mesh
 	{
-		for (std::shared_ptr<Mesh> m : vMesh) {
-			m->Draw();
+		for (std::shared_ptr<Entity> m : entities) {
+			m->Draw(vsConstantBuffer);
 		}
 	}
 
@@ -422,32 +443,61 @@ void Game::BuildUI()
 		ImGui::TreePop();
 	}
 
-	if (ImGui::TreeNode("Shader Values"))
+	if (ImGui::TreeNode("Mesh Details"))
 	{
-		// Create a drag slider for position offset values
-		ImGui::DragFloat3("Position", &vsData.offset.x, 0.01f);
+		for (int i = 0; i < meshes.size(); i++) {
+			ImGui::PushID(meshes[i].get());
 
-		ImGui::Spacing();
+			if (ImGui::TreeNode("Mesh Node", "%s", meshes[i]->GetName())) {
+				ImGui::Spacing();
 
-		// Create a 4-component color editor for color tint
-		ImGui::ColorEdit4("Color Tint", &vsData.colorTint.x);
+				ImGui::Text("Triangles: %d", meshes[i]->GetIndexCount() / 3);
+				ImGui::Text("Vertices: %d", meshes[i]->GetVertexCount());
+				ImGui::Text("Indicecs: %d", meshes[i]->GetIndexCount());
 
-		ImGui::Spacing();
+				ImGui::Spacing();
+
+				ImGui::TreePop();
+			}
+
+			ImGui::PopID();
+		}
 
 		ImGui::TreePop();
 	}
 
-	if (ImGui::TreeNode("Mesh Details"))
+	if (ImGui::TreeNode("Game Entities"))
 	{
-		for (int i = 0; i < vMesh.size(); i++) {
-			ImGui::PushID(vMesh[i].get());
+		for (int i = 0; i < entities.size(); i++) {
+			ImGui::PushID(entities[i].get());
 
-			if (ImGui::TreeNode("Mesh Node", "%s", vMesh[i]->GetName())) {
+			if (ImGui::TreeNode("Entity", "Entity %d", i)) {
 				ImGui::Spacing();
 
-				ImGui::Text("Triangles: %d", vMesh[i]->GetIndexCount() / 3);
-				ImGui::Text("Vertices: %d", vMesh[i]->GetVertexCount());
-				ImGui::Text("Indicecs: %d", vMesh[i]->GetIndexCount());
+				// Mesh name
+				ImGui::Text("Mesh: %s", entities[i]->GetMesh()->GetName());
+
+				ImGui::Spacing();
+
+				// Transform variables
+				std::shared_ptr<Transform> transform = entities[i]->GetTransform();
+
+				XMFLOAT3 position = transform->GetPosition();
+				XMFLOAT3 rotation = transform->GetPitchYawRoll();
+				XMFLOAT3 scale = transform->GetScale();
+
+				// Drag sliders for transform values
+				// Position
+				if (ImGui::DragFloat3("Position", &position.x, 0.01f))
+					transform->SetPosition(position);
+				// Rotation
+				if (ImGui::DragFloat3("Rotation", &rotation.x, 0.01f))
+					transform->SetRotation(rotation);
+				// Scale
+				if (ImGui::DragFloat3("Scale", &scale.x, 0.01f))
+					transform->SetScale(scale);
+
+				//ImGui::DragFloat3("Position", &vsData.offset.x, 0.01f);
 
 				ImGui::Spacing();
 

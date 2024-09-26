@@ -19,7 +19,7 @@ Mesh::Mesh(const char* name, Vertex* vertArray, size_t numVertices, unsigned int
 		//  - After the buffer is created, this description variable is unnecessary
 		D3D11_BUFFER_DESC vbd = {};
 		vbd.Usage = D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		vbd.ByteWidth = sizeof(Vertex) * numVertices;       // Multiply by dynamic number of veritces
+		vbd.ByteWidth = sizeof(Vertex) * (UINT)numVertices;       // Multiply by dynamic number of veritces
 		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Tells Direct3D this is a vertex buffer
 		vbd.CPUAccessFlags = 0;	// Note: We cannot access the data from C++ (this is good)
 		vbd.MiscFlags = 0;
@@ -47,7 +47,7 @@ Mesh::Mesh(const char* name, Vertex* vertArray, size_t numVertices, unsigned int
 		//  - Bind Flag (used as an index buffer instead of a vertex buffer) 
 		D3D11_BUFFER_DESC ibd = {};
 		ibd.Usage = D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		ibd.ByteWidth = sizeof(unsigned int) * numIndices;	// Multiply by dynamic number of indices
+		ibd.ByteWidth = sizeof(unsigned int) * (UINT)numIndices;	// Multiply by dynamic number of indices
 		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;	// Tells Direct3D this is an index buffer
 		ibd.CPUAccessFlags = 0;	// Note: We cannot access the data from C++ (this is good)
 		ibd.MiscFlags = 0;
@@ -63,8 +63,8 @@ Mesh::Mesh(const char* name, Vertex* vertArray, size_t numVertices, unsigned int
 	}
 
 	// Save the sizes of the arrays to local variables
-	this->numVertices = numVertices;
-	this->numIndices = numIndices;
+	this->numVertices = (unsigned int)numVertices;
+	this->numIndices = (unsigned int)numIndices;
 
 	this->name = name;
 }

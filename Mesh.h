@@ -14,8 +14,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 
 	// Buffer relevant fields
-	int numVertices;		// How many vertices are in the mesh's vertex buffer
-	int numIndices;			// How many indices are in the mesh's index buffer	
+	unsigned int numVertices;		// How many vertices are in the mesh's vertex buffer
+	unsigned int numIndices;			// How many indices are in the mesh's index buffer	
 
 	// UI related fields
 	const char* name;

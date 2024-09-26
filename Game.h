@@ -7,6 +7,7 @@
 
 #include "Mesh.h"
 #include "BufferStructs.h"
+#include "Entity.h"
 
 class Game
 {
@@ -38,8 +39,10 @@ private:
 
 	VertexShaderData vsData;
 
-	// Field for storing mesh data
-	std::vector<std::shared_ptr<Mesh>> vMesh;
+	// Vector for storing mesh data
+	std::vector<std::shared_ptr<Mesh>> meshes;
+	// Vector for storing entity data
+	std::vector <std::shared_ptr<Entity>> entities;
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the

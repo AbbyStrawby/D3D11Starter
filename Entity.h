@@ -2,6 +2,7 @@
 
 #include "Mesh.h"
 #include "Transform.h"
+#include "Camera.h"
 #include <memory>
 #include <wrl/client.h>
 
@@ -23,7 +24,7 @@ public:
 	std::shared_ptr<Transform> GetTransform();
 
 	// Functions
-	void Draw(Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer);
+	void Draw(Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer, std::shared_ptr<Camera> camera);
 
 };
 

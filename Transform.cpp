@@ -57,19 +57,15 @@ void Transform::SetScale(XMFLOAT3 scale)
 
 // Getters
 
+// Return transformation values
+XMFLOAT3 Transform::GetPosition() {	return position; }
+XMFLOAT3 Transform::GetPitchYawRoll() {	return rotation; }
+XMFLOAT3 Transform::GetScale() { return scale; }
 
-XMFLOAT3 Transform::GetPosition()
-{
-	return position;
-}
-XMFLOAT3 Transform::GetPitchYawRoll()
-{
-	return rotation;
-}
-XMFLOAT3 Transform::GetScale()
-{
-	return scale;
-}
+// Calculate and return the directional vectors relative to transform's orientation
+DirectX::XMFLOAT3 Transform::GetRight()   { return GetRelativeVector(XMFLOAT3(1, 0, 0)); }
+DirectX::XMFLOAT3 Transform::GetUp()	  { return GetRelativeVector(XMFLOAT3(0, 1, 0)); }
+DirectX::XMFLOAT3 Transform::GetForward() {	return GetRelativeVector(XMFLOAT3(0, 0, 1)); }
 
 // Recalculate and return World Matrix Value
 XMFLOAT4X4 Transform::GetWorldMatrix()
@@ -118,6 +114,27 @@ void Transform::MoveAbsolute(XMFLOAT3 offset)
 	MoveAbsolute(offset.x, offset.y, offset.z);
 }
 
+// Move object with respect to its orientation
+void Transform::MoveRelative(float x, float y, float z)
+{
+	MoveRelative(XMFLOAT3(x, y, z));
+}
+// Move object with respect to its orientation
+void Transform::MoveRelative(DirectX::XMFLOAT3 offset)
+{
+	// Get a relative version of the offset vector
+	XMFLOAT3 relativeOffset = GetRelativeVector(offset);
+	// Load into math type
+	XMVECTOR move = XMLoadFloat3(&relativeOffset);
+
+	// Move the position by the new rotated offset
+	XMVECTOR pos = XMLoadFloat3(&position);
+	pos = XMVectorAdd(pos, move);
+
+	// Store the pos value back in position storage type
+	XMStoreFloat3(&position, pos);
+}
+
 // Rotate object by a certain amount
 void Transform::Rotate(float pitch, float yaw, float roll)
 {
@@ -142,4 +159,23 @@ void Transform::Scale(float x, float y, float z)
 void Transform::Scale(float scale)
 {
 	Scale(scale, scale, scale);
+}
+
+// Helpers
+
+// Take a vector in absolute space and rotate it to be relative to the transform's orientation
+DirectX::XMFLOAT3 Transform::GetRelativeVector(DirectX::XMFLOAT3 absVector)
+{
+	// Load the absolute vector as a math type
+	XMVECTOR absVec = XMLoadFloat3(&absVector);
+	// Quaternrion representing current rotation
+	XMVECTOR quat = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+
+	// Rotate the vector by the quaternion to get the vector in relative space
+	XMVECTOR relVec = XMVector3Rotate(absVec, quat);
+
+	XMFLOAT3 ret;
+	XMStoreFloat3(&ret, relVec);
+
+	return ret;
 }

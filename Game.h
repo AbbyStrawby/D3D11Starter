@@ -8,6 +8,7 @@
 #include "Mesh.h"
 #include "BufferStructs.h"
 #include "Entity.h"
+#include "Camera.h"
 
 class Game
 {
@@ -31,18 +32,21 @@ private:
 	void CreateGeometry();
 
 	void UIUpdate(float deltaTime);
-	void BuildUI();
+	void BuildUI(float deltaTime);
 
 	// UI fields
 	bool showDemoUI;
 	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 
-	VertexShaderData vsData;
-
 	// Vector for storing mesh data
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	// Vector for storing entity data
-	std::vector <std::shared_ptr<Entity>> entities;
+	std::vector<std::shared_ptr<Entity>> entities;
+	// Vector for storing camera data
+	std::vector<std::shared_ptr<Camera>> cameras;
+
+	// Int for keeping track of which camera is active
+	int activeCam = 0;
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the

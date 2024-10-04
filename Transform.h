@@ -14,7 +14,6 @@ private:
 	// Transform world matrices
 	DirectX::XMFLOAT4X4 worldMatrix;
 	DirectX::XMFLOAT4X4 worldInverseTransposeMatrix;
-
 	
 
 public:
@@ -37,6 +36,10 @@ public:
 	DirectX::XMFLOAT3 GetPitchYawRoll();
 	DirectX::XMFLOAT3 GetScale();
 
+	DirectX::XMFLOAT3 GetRight();
+	DirectX::XMFLOAT3 GetUp();
+	DirectX::XMFLOAT3 GetForward();
+
 	DirectX::XMFLOAT4X4 GetWorldMatrix();
 	DirectX::XMFLOAT4X4 GetWorldInverseTransposeMatrix();
 
@@ -44,10 +47,16 @@ public:
 	void MoveAbsolute(float x, float y, float z);
 	void MoveAbsolute(DirectX::XMFLOAT3 offset);
 
+	void MoveRelative(float x, float y, float z);
+	void MoveRelative(DirectX::XMFLOAT3 offset);
+
 	void Rotate(float pitch, float yaw, float roll);
 	void Rotate(DirectX::XMFLOAT3 rotation);
 
 	void Scale(float x, float y, float z);
 	void Scale(float scale);
+
+	// Helpers
+	DirectX::XMFLOAT3 GetRelativeVector(DirectX::XMFLOAT3 absVector);
 };
 

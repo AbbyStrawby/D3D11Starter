@@ -85,7 +85,33 @@ void Game::Initialize()
 		0,									// Which register to bind to
 		1,									// How many buffers we're setting
 		vsConstantBuffer.GetAddressOf()		// Address of buffer(s) (just one since we're only using one)
-	);	
+	);
+
+	// Create Camera(s)
+	std::shared_ptr<Camera> cam1 =
+		std::make_shared<Camera>(
+			(float)Window::Width() / Window::Height(),
+			XMFLOAT3(0, 0, -5.0f),
+			XMFLOAT3(),
+			XM_PIDIV4,
+			0.01f,
+			100.0f,
+			5.0f,
+			5.0f);
+	std::shared_ptr<Camera> cam2 =
+		std::make_shared<Camera>(
+			(float)Window::Width() / Window::Height(),
+			XMFLOAT3(2.5f, 1.5f, -2.5f),
+			XMFLOAT3(XM_PI / 8, -XM_PIDIV4, 0),
+			XM_PIDIV2,
+			0.01f,
+			100.0f,
+			5.0f,
+			5.0f);
+
+
+	cameras.push_back(cam1);
+	cameras.push_back(cam2);
 }
 
 
@@ -296,6 +322,10 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 void Game::OnResize()
 {
+	// Update Camera projection matrices
+	for (std::shared_ptr<Camera> c : cameras) {
+		c->UpdateProjectionMatrix((float)Window::Width() / Window::Height());
+	}
 }
 
 
@@ -308,7 +338,10 @@ void Game::Update(float deltaTime, float totalTime)
 	UIUpdate(deltaTime);
 
 	// Build the custom UI
-	BuildUI();
+	BuildUI(deltaTime);
+
+	// Update the active cam only
+	cameras[activeCam]->Update(deltaTime);
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -343,8 +376,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	// DRAW geometry
 	// Loop through and draw every mesh
 	{
-		for (std::shared_ptr<Entity> m : entities) {
-			m->Draw(vsConstantBuffer);
+		for (std::shared_ptr<Entity> e : entities) {
+			e->Draw(vsConstantBuffer, cameras[activeCam]);
 		}
 	}
 
@@ -394,7 +427,7 @@ void Game::UIUpdate(float deltaTime)
 // --------------------------------------------------------
 // Build Custom UI
 // --------------------------------------------------------
-void Game::BuildUI() 
+void Game::BuildUI(float deltaTime)
 {
 	// Check if we want to show demo window
 	if (showDemoUI) {
@@ -497,8 +530,6 @@ void Game::BuildUI()
 				if (ImGui::DragFloat3("Scale", &scale.x, 0.01f))
 					transform->SetScale(scale);
 
-				//ImGui::DragFloat3("Position", &vsData.offset.x, 0.01f);
-
 				ImGui::Spacing();
 
 				ImGui::TreePop();
@@ -506,6 +537,29 @@ void Game::BuildUI()
 
 			ImGui::PopID();
 		}
+
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Cameras"))
+	{
+		// Camera name
+		ImGui::Text("Camera %d", activeCam);
+		ImGui::Spacing();
+
+		XMFLOAT3 pos = cameras[activeCam]->GetTransform()->GetPosition();
+		XMFLOAT3 rot = cameras[activeCam]->GetTransform()->GetPitchYawRoll();
+
+		ImGui::Text("Pos: %f, %f, %f", pos.x, pos.y, pos.z);
+		ImGui::Text("Angle: %f, %f, %f", rot.x, rot.y, rot.z);
+		ImGui::Text("delta: %f", deltaTime);
+		ImGui::Text("FOV: %f", cameras[activeCam]->GetFOV());
+		ImGui::Text("Near: %f", cameras[activeCam]->GetNearClip());
+		ImGui::Text("Far: %f", cameras[activeCam]->GetFarClip());
+
+		// Buttons to toggle through cameras
+		if (ImGui::Button("Cam 0")) { activeCam = 0; } ImGui::SameLine();
+		if (ImGui::Button("Cam 1")) { activeCam = 1; }
 
 		ImGui::TreePop();
 	}

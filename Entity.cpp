@@ -22,12 +22,14 @@ std::shared_ptr<Transform> Entity::GetTransform()
 	return transform;
 }
 
-void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer)
+void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer, std::shared_ptr<Camera> camera)
 {
 	// Create local vertex shader data for the entity
-	VertexShaderData vsData;
+	VertexShaderData vsData = {};
 	vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
 	vsData.worldMatrix = transform->GetWorldMatrix();
+	vsData.viewMatrix = camera->GetViewMatrix();
+	vsData.projectionMatrix = camera->GetProjectionMatrix();
 
 	// Copy Data to the Vertex Shader 
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};

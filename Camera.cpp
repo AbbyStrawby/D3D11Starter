@@ -5,7 +5,7 @@ using namespace DirectX;
 
 // Construct a Camera object with only essential parameters
 Camera::Camera(float aspectRatio, XMFLOAT3 startPosition) :
-	Camera(aspectRatio, startPosition, XMFLOAT3(), XM_PIDIV4, 0.1f, 100.0f, 5.0f, 4.0f)
+	Camera(aspectRatio, startPosition, XMFLOAT3(), XM_PIDIV4, 0.1f, 100.0f, 5.0f, 0.05f)
 {
 }
 // Construct a Camera object with extra parameters
@@ -93,12 +93,9 @@ void Camera::Update(float dt)
 	// Mouse movement (camera orientation)
 	if (Input::MouseLeftDown()) 
 	{
-		// Calculate look speed based on delta time
-		float ls = lookSpeed * dt;
-
 		// Get cursor movement since last frame
-		float cursorMovementX = Input::GetMouseXDelta() * ls;
-		float cursorMovementY = Input::GetMouseYDelta() * ls;
+		float cursorMovementX = Input::GetMouseXDelta() * lookSpeed;
+		float cursorMovementY = Input::GetMouseYDelta() * lookSpeed;
 
 		// Transform based on mouse movement
 		// y movement correspeonds to rotation on x axis and vice versa

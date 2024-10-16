@@ -97,7 +97,7 @@ void Game::Initialize()
 			0.01f,
 			100.0f,
 			5.0f,
-			5.0f);
+			0.001f);
 	std::shared_ptr<Camera> cam2 =
 		std::make_shared<Camera>(
 			(float)Window::Width() / Window::Height(),
@@ -107,7 +107,7 @@ void Game::Initialize()
 			0.01f,
 			100.0f,
 			5.0f,
-			5.0f);
+			0.001f);
 
 
 	cameras.push_back(cam1);

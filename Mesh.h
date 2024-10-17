@@ -20,10 +20,14 @@ private:
 	// UI related fields
 	const char* name;
 
+	// Helper functions
+	void CreateBuffers(Vertex* vertArray, size_t numVertices, unsigned int* indexArray, size_t numIndices);
+
 public:
 
 	// Con/destructor
 	Mesh(const char* name, Vertex* vertArray, size_t numVertices, unsigned int* indexArray, size_t numIndices);
+	Mesh(const char* name, const char* filename);
 	~Mesh();
 
 	// Access ComPtrs

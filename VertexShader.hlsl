@@ -1,6 +1,5 @@
 
 // Constant buffer for external data
-// Important to be in same order as the struct in BufferStructs.h
 cbuffer ExternalData : register(b0)
 {
     float4 colorTint;
@@ -16,13 +15,9 @@ cbuffer ExternalData : register(b0)
 // - Each variable must have a semantic, which defines its usage
 struct VertexShaderInput
 { 
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
 	float3 localPosition	: POSITION;     // XYZ position
-	float4 color			: COLOR;        // RGBA color
+	float2 uv				: TEXCOORD;		// UV texture coordinate
+	float3 normal			: NORMAL;		// Surface normal vector
 };
 
 // Struct representing the data we're sending down the pipeline
@@ -32,13 +27,9 @@ struct VertexShaderInput
 // - Each variable must have a semantic, which defines its usage
 struct VertexToPixel
 {
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
 	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-	float4 color			: COLOR;        // RGBA color
+    float2 uv				: TEXCOORD;		// UV texture coordinate
+    float3 normal			: NORMAL;		// Surface normal vector
 };
 
 // --------------------------------------------------------
@@ -63,11 +54,10 @@ VertexToPixel main( VertexShaderInput input )
 	//   a perspective projection matrix, which we'll get to in the future).
     matrix wvp = mul(projection, mul(view, world));
     output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
-
-	// Pass the color through 
-	// - The values will be interpolated per-pixel by the rasterizer
-	// - We don't need to alter it here, but we do need to send it to the pixel shader
-	output.color = input.color * colorTint;
+	
+	// Send other vertex data through the pipeline
+    output.uv = input.uv;
+    output.normal = input.normal;
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

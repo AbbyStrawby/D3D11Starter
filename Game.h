@@ -6,9 +6,10 @@
 #include <memory>
 
 #include "Mesh.h"
-#include "BufferStructs.h"
 #include "Entity.h"
 #include "Camera.h"
+#include "SimpleShader.h"
+#include "Material.h"
 
 class Game
 {
@@ -28,8 +29,7 @@ public:
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
-	void LoadShaders();
-	void CreateGeometry();
+	void LoadShadersAndCreateGeometry();
 
 	void UIUpdate(float deltaTime);
 	void BuildUI(float deltaTime);
@@ -40,6 +40,8 @@ private:
 
 	// Vector for storing mesh data
 	std::vector<std::shared_ptr<Mesh>> meshes;
+	// Vector for storing material data
+	std::vector<std::shared_ptr<Material>> materials;
 	// Vector for storing entity data
 	std::vector<std::shared_ptr<Entity>> entities;
 	// Vector for storing camera data
@@ -53,12 +55,11 @@ private:
 	//     Component Object Model, which DirectX objects do
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 
-	// Constant buffer related to vertex shader data
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
-
-	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+	// Simple shader pointers
+	std::shared_ptr<SimpleVertexShader> vertexShader;
+	std::shared_ptr<SimplePixelShader> pixelShader;
+	std::shared_ptr<SimplePixelShader> uvPS;
+	std::shared_ptr<SimplePixelShader> normalPS;
+	std::shared_ptr<SimplePixelShader> customPS;
 };
 

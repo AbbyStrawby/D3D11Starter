@@ -1,36 +1,14 @@
+#include "ShaderIncludes.hlsli"
 
 // Constant buffer for external data
 cbuffer ExternalData : register(b0)
 {
-    float4 colorTint;
+    float3 colorTint;
     matrix world;
     matrix view;
     matrix projection;
+    matrix worldInvTranspose;
 }
-
-// Struct representing a single vertex worth of data
-// - This should match the vertex definition in our C++ code
-// - By "match", I mean the size, order and number of members
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
-struct VertexShaderInput
-{ 
-	float3 localPosition	: POSITION;     // XYZ position
-	float2 uv				: TEXCOORD;		// UV texture coordinate
-	float3 normal			: NORMAL;		// Surface normal vector
-};
-
-// Struct representing the data we're sending down the pipeline
-// - Should match our pixel shader's input (hence the name: Vertex to Pixel)
-// - At a minimum, we need a piece of data defined tagged as SV_POSITION
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-    float2 uv				: TEXCOORD;		// UV texture coordinate
-    float3 normal			: NORMAL;		// Surface normal vector
-};
 
 // --------------------------------------------------------
 // The entry point (main method) for our vertex shader
@@ -57,7 +35,8 @@ VertexToPixel main( VertexShaderInput input )
 	
 	// Send other vertex data through the pipeline
     output.uv = input.uv;
-    output.normal = input.normal;
+    output.normal = mul((float3x3) worldInvTranspose, input.normal);
+    output.worldPosition = mul(world, float4(input.localPosition, 1)).xyz;
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

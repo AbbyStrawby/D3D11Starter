@@ -1,21 +1,10 @@
+#include "ShaderIncludes.hlsli"
 
 // Constant buffer for external data
 cbuffer ExternalData : register(b0)
 {
     float4 colorTint;
 }
-
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-    float4 screenPosition : SV_POSITION; // XYZW position (System Value Position)
-    float2 uv : TEXCOORD; // UV texture coordinate
-    float3 normal : NORMAL; // Surface normal vector
-};
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -29,7 +18,7 @@ struct VertexToPixel
 float4 main(VertexToPixel input) : SV_TARGET
 {
     // color value to change and return
-    float4 color;
+    float4 color = float4(0, 0, 0, 0);
     
     // store input values for ease of use
     float4 pos = input.screenPosition;

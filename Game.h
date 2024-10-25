@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "SimpleShader.h"
 #include "Material.h"
+#include "Lights.h"
 
 class Game
 {
@@ -38,14 +39,14 @@ private:
 	bool showDemoUI;
 	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 
-	// Vector for storing mesh data
+	DirectX::XMFLOAT3 ambientColor = DirectX::XMFLOAT3(0.1f, 0.1f, 0.2f);
+
+	// Vectors to store data for objects in the scene
 	std::vector<std::shared_ptr<Mesh>> meshes;
-	// Vector for storing material data
 	std::vector<std::shared_ptr<Material>> materials;
-	// Vector for storing entity data
 	std::vector<std::shared_ptr<Entity>> entities;
-	// Vector for storing camera data
 	std::vector<std::shared_ptr<Camera>> cameras;
+	std::vector<Light> lights;
 
 	// Int for keeping track of which camera is active
 	int activeCam = 0;

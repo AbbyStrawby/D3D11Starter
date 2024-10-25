@@ -57,7 +57,7 @@ void Game::Initialize()
 	std::shared_ptr<Camera> cam1 =
 		std::make_shared<Camera>(
 			(float)Window::Width() / Window::Height(),
-			XMFLOAT3(0, 4, -20.0f),
+			XMFLOAT3(0, 2, -20.0f),
 			XMFLOAT3(),
 			XM_PIDIV4,
 			0.01f,
@@ -78,6 +78,45 @@ void Game::Initialize()
 
 	cameras.push_back(cam1);
 	cameras.push_back(cam2);
+
+	// Initialize Lights
+	Light dirLight1 = {};
+	dirLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight1.Direction = XMFLOAT3(1, 0, 0);
+	dirLight1.Color = XMFLOAT3(1.0f, 0.1f, 0.1f);
+	dirLight1.Intensity = 1.0f;
+
+	Light dirLight2 = {};
+	dirLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight2.Direction = XMFLOAT3(0, -1, 0);
+	dirLight2.Color = XMFLOAT3(0.1f, 1.0f, 0.1f);
+	dirLight2.Intensity = 1.0f;
+
+	Light dirLight3 = {};
+	dirLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight3.Direction = XMFLOAT3(-1, 1, 0);
+	dirLight3.Color = XMFLOAT3(0.1f, 0.1f, 1.0f);
+	dirLight3.Intensity = 1.0f;
+
+	Light pointLight1 = {};
+	pointLight1.Type = LIGHT_TYPE_POINT;
+	pointLight1.Position = XMFLOAT3(-1.5f, 0, 0);
+	pointLight1.Color = XMFLOAT3(1, 1, 1);
+	pointLight1.Intensity = 1.0f;
+	pointLight1.Range = 8.0f;
+
+	Light pointLight2 = {};
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight2.Position = XMFLOAT3(1.5f, 0, 0);
+	pointLight2.Color = XMFLOAT3(1, 1, 1);
+	pointLight2.Intensity = 0.5f;
+	pointLight2.Range = 12.0f;
+
+	lights.push_back(dirLight1);
+	lights.push_back(dirLight2);
+	lights.push_back(dirLight3);
+	lights.push_back(pointLight1);
+	lights.push_back(pointLight2);
 }
 
 
@@ -123,12 +162,12 @@ void Game::LoadShadersAndCreateGeometry()
 	shared_ptr<Mesh> quadDoubleSideMesh = make_shared<Mesh>("Double-Sided Quad", FixPath("../../Assets/Models/quad_double_sided.obj").c_str());
 
 	// Create materials before creating entities
-	shared_ptr<Material> matWhite = make_shared<Material>(vertexShader, pixelShader, XMFLOAT4(1, 1, 1, 0));
-	shared_ptr<Material> matPurple = make_shared<Material>(vertexShader, pixelShader, XMFLOAT4(0.8f, 0, 0.8f, 0));
-	shared_ptr<Material> matOrange = make_shared<Material>(vertexShader, pixelShader, XMFLOAT4(1.0f, 0.5f, 0, 0));
-	shared_ptr<Material> matUV = make_shared<Material>(vertexShader, uvPS, XMFLOAT4(0, 0, 0, 0));
-	shared_ptr<Material> matNormal = make_shared<Material>(vertexShader, normalPS, XMFLOAT4(0, 0, 0, 0));
-	shared_ptr<Material> matCustom = make_shared<Material>(vertexShader, customPS, XMFLOAT4(1, 1, 1, 0));
+	shared_ptr<Material> matWhite = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f);
+	shared_ptr<Material> matPurple = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(0.8f, 0, 0.8f), 0.5f);
+	shared_ptr<Material> matOrange = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1.0f, 0.5f, 0), 0.5f);
+	shared_ptr<Material> matUV = make_shared<Material>(vertexShader, uvPS, XMFLOAT3(0, 0, 0), 0.5f);
+	shared_ptr<Material> matNormal = make_shared<Material>(vertexShader, normalPS, XMFLOAT3(0, 0, 0), 0.5f);
+	shared_ptr<Material> matCustom = make_shared<Material>(vertexShader, customPS, XMFLOAT3(1, 1, 1), 0.5f);
 
 	// Add material objects to vector
 	materials.push_back(matWhite);
@@ -138,10 +177,10 @@ void Game::LoadShadersAndCreateGeometry()
 	materials.push_back(matNormal);
 
 	// Make game entities
-	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(cubeMesh, matCustom);
+	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(cubeMesh, matWhite);
 	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(cylinderMesh, matWhite);
 	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(helixMesh, matWhite);
-	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(sphereMesh, matCustom);
+	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(sphereMesh, matWhite);
 	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(torusMesh, matWhite);
 	std::shared_ptr<Entity> entity6 = std::make_shared<Entity>(quadMesh, matWhite);
 	std::shared_ptr<Entity> entity7 = std::make_shared<Entity>(quadDoubleSideMesh, matWhite);
@@ -164,25 +203,6 @@ void Game::LoadShadersAndCreateGeometry()
 	entities.push_back(entity5);
 	entities.push_back(entity6);
 	entities.push_back(entity7);
-
-	// Create entities similar to sample with uv and normal materials
-	int numEntities = (int)entities.size();
-	for (int i = 0; i < numEntities; i++) {
-		// Get the mesh of the entity
-		shared_ptr<Mesh> mesh = entities[i]->GetMesh();
-
-		// Make uv entity, transform it, and add it to list of entities
-		shared_ptr<Entity> uvEntity = make_shared<Entity>(mesh, matUV);
-		uvEntity->GetTransform()->MoveAbsolute(entities[i]->GetTransform()->GetPosition());	// Move to initial pos
-		uvEntity->GetTransform()->MoveAbsolute(0, 3, 0);									// Then move it up
-		entities.push_back(uvEntity);
-
-		// Repeat for normal entity
-		shared_ptr<Entity> normalEntity = make_shared<Entity>(mesh, matNormal);
-		normalEntity->GetTransform()->MoveAbsolute(entities[i]->GetTransform()->GetPosition());	// Move to initial pos
-		normalEntity->GetTransform()->MoveAbsolute(0, 6, 0);									// Then move it up
-		entities.push_back(normalEntity);
-	}
 }
 
 
@@ -253,6 +273,12 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Loop through and draw every mesh
 	{
 		for (std::shared_ptr<Entity> e : entities) {
+			// Set pixel shader data
+			std::shared_ptr<SimplePixelShader> ps = e->GetMaterial()->GetPixelShader();
+			ps->SetFloat3("ambient", ambientColor);
+			ps->SetData("lights", &lights[0], sizeof(Light) * (int)lights.size());
+
+			// Draw the entity
 			e->Draw(cameras[activeCam]);
 		}
 	}
@@ -440,6 +466,52 @@ void Game::BuildUI(float deltaTime)
 		ImGui::TreePop();
 	}
 
+	if (ImGui::TreeNode("Lights"))
+	{
+		// Ambient Color
+		ImGui::Spacing();
+		ImGui::ColorEdit3("Ambient Color", &ambientColor.x);
+		ImGui::Spacing();
+
+		for (int i = 0; i < lights.size(); i++) {
+
+
+			string lightName;
+
+			if (lights[i].Type == LIGHT_TYPE_DIRECTIONAL)
+				lightName = "Directional Light";
+			else if (lights[i].Type == LIGHT_TYPE_POINT)
+				lightName = "Point Light";
+			else if (lights[i].Type == LIGHT_TYPE_SPOT)
+				lightName = "Spot Light";
+			
+			ImGui::PushID(&lights[i]);
+
+			if (ImGui::TreeNode("Light", lightName.c_str())) {
+				ImGui::Spacing();
+
+				// Drag sliders for values
+				// Color
+				ImGui::ColorEdit3("Color", &lights[i].Color.x);
+
+				ImGui::Spacing();
+				
+				// Position (Point Light Exclusive)
+				if (lightName == "Point Light") {
+					XMFLOAT3 position = lights[i].Position;
+					ImGui::DragFloat3("Position", &lights[i].Position.x, 0.01f);
+
+					ImGui::Spacing();
+				}
+
+				ImGui::TreePop();
+			}
+
+			ImGui::PopID();
+		}
+
+		ImGui::TreePop();
+	}
 	
 
 	

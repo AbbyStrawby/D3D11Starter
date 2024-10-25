@@ -10,7 +10,8 @@ class Material
 private:
 
 	// Fields
-	DirectX::XMFLOAT4 colorTint;
+	DirectX::XMFLOAT3 colorTint;
+	float roughness;				// 0 shiny - 1 rough
 
 	// SimpleShader pointers
 	std::shared_ptr<SimpleVertexShader> vs;
@@ -20,15 +21,17 @@ public:
 
 	// Constructor
 	Material(std::shared_ptr<SimpleVertexShader> vShader, std::shared_ptr<SimplePixelShader> pShader,
-		DirectX::XMFLOAT4 colorTint);
+		DirectX::XMFLOAT3 colorTint, float roughness);
 
 	// Getters
-	DirectX::XMFLOAT4 GetColorTint();
+	DirectX::XMFLOAT3 GetColorTint();
+	float GetRoughness();
 	std::shared_ptr<SimpleVertexShader> GetVertexShader();
 	std::shared_ptr<SimplePixelShader> GetPixelShader();
 
 	// Setters
-	void SetColorTint(DirectX::XMFLOAT4 tint);
+	void SetColorTint(DirectX::XMFLOAT3 tint);
+	void SetRoughness(float roughness);
 	void SetVertexShader(std::shared_ptr<SimpleVertexShader> vShader);
 	void SetPixelShader(std::shared_ptr<SimplePixelShader> pShader);
 };

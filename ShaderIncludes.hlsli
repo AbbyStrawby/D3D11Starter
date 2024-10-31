@@ -64,7 +64,7 @@ float Specular(float3 reflection, float3 view, float roughness)
 }
 
 float3 DirectionalLight(Light light, float3 normal, float3 cameraPos, float3 worldPos, float roughness, 
-    float3 surfaceColor)
+    float3 surfaceColor, float specScale)
 {
     // Calculate important vectors
     float3 dirToLight = normalize(-light.Direction);
@@ -73,13 +73,13 @@ float3 DirectionalLight(Light light, float3 normal, float3 cameraPos, float3 wor
         
     // Calculate diffuse/specular colors
     float3 diffuse = Diffuse(normal, dirToLight);    
-    float3 specular = Specular(refl, dirToCam, roughness);
+    float3 specular = Specular(refl, dirToCam, roughness) * specScale;
     
     return (diffuse * surfaceColor + specular) * light.Color * light.Intensity;
 }
 
 float3 PointLight(Light light, float3 normal, float3 cameraPos, float3 worldPos, float roughness, 
-    float3 surfaceColor)
+    float3 surfaceColor, float specScale)
 {
     // Calculate important vectors
     float3 dirToLight = normalize(light.Position - worldPos);
@@ -89,7 +89,7 @@ float3 PointLight(Light light, float3 normal, float3 cameraPos, float3 worldPos,
     // Calculate attenuation and diffuse/specular colors
     float atten = Attenuate(light, worldPos);
     float3 diffuse = Diffuse(normal, dirToLight);
-    float3 specular = Specular(refl, dirToCam, roughness);
+    float3 specular = Specular(refl, dirToCam, roughness) * specScale;
     
     return (diffuse * surfaceColor + specular) * light.Color * light.Intensity * atten;
 }

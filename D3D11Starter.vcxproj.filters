@@ -165,5 +165,9 @@
     <None Include="ShaderIncludes.hlsli">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="TextureReadMe.txt" />
   </ItemGroup>
 </Project>

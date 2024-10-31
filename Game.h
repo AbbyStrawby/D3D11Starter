@@ -11,6 +11,7 @@
 #include "SimpleShader.h"
 #include "Material.h"
 #include "Lights.h"
+#include "WICTextureLoader.h"
 
 class Game
 {
@@ -55,6 +56,7 @@ private:
 	//  - This is a smart pointer for objects that abide by the
 	//     Component Object Model, which DirectX objects do
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
+
 
 	// Simple shader pointers
 	std::shared_ptr<SimpleVertexShader> vertexShader;

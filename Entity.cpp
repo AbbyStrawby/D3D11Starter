@@ -27,6 +27,8 @@ void Entity::SetMaterial(std::shared_ptr<Material> material) { this->material = 
 
 void Entity::Draw(std::shared_ptr<Camera> camera)
 {
+	
+
 	// Get shaders for this game entity
 	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
 	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
@@ -40,11 +42,16 @@ void Entity::Draw(std::shared_ptr<Camera> camera)
 
 	ps->SetFloat3("colorTint", material->GetColorTint());
 	ps->SetFloat("roughness", material->GetRoughness());
+	ps->SetFloat("uvScale", material->GetUVScale());
+	ps->SetFloat("uvOffset", material->GetUVOffset());
 	ps->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 
 	// Copy Data to the Vertex Shader 
 	vs->CopyAllBufferData();
 	ps->CopyAllBufferData();
+
+	// Bind the material's textures and samplers
+	material->BindTexturesAndSamplers();
 
 	// Activate the shaders for this mesh's materials before drawing
 	vs->SetShader();

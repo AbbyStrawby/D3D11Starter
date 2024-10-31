@@ -161,29 +161,68 @@ void Game::LoadShadersAndCreateGeometry()
 	shared_ptr<Mesh> quadMesh = make_shared<Mesh>("Quad", FixPath("../../Assets/Models/quad.obj").c_str());
 	shared_ptr<Mesh> quadDoubleSideMesh = make_shared<Mesh>("Double-Sided Quad", FixPath("../../Assets/Models/quad_double_sided.obj").c_str());
 
+	// Load Sampler State
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 4;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Graphics::Device.Get()->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
+
+	// Load textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tilesSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tilesSpecularSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokenTilesSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokenTilesSpecularSRV;
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), 
+		FixPath(L"../../Assets/Textures/tiles.png").c_str(), 0, tilesSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), 
+		FixPath(L"../../Assets/Textures/tiles_specular.png").c_str(), 0, tilesSpecularSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/brokentiles.png").c_str(), 0, brokenTilesSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/brokentiles_specular.png").c_str(), 0, brokenTilesSpecularSRV.GetAddressOf());
+
 	// Create materials before creating entities
-	shared_ptr<Material> matWhite = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f);
-	shared_ptr<Material> matPurple = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(0.8f, 0, 0.8f), 0.5f);
-	shared_ptr<Material> matOrange = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1.0f, 0.5f, 0), 0.5f);
-	shared_ptr<Material> matUV = make_shared<Material>(vertexShader, uvPS, XMFLOAT3(0, 0, 0), 0.5f);
-	shared_ptr<Material> matNormal = make_shared<Material>(vertexShader, normalPS, XMFLOAT3(0, 0, 0), 0.5f);
-	shared_ptr<Material> matCustom = make_shared<Material>(vertexShader, customPS, XMFLOAT3(1, 1, 1), 0.5f);
+	shared_ptr<Material> matWhite = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0);
+	//shared_ptr<Material> matPurple = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(0.8f, 0, 0.8f), 0.5f);
+	//shared_ptr<Material> matOrange = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1.0f, 0.5f, 0), 0.5f);
+	shared_ptr<Material> matUV = make_shared<Material>(vertexShader, uvPS, XMFLOAT3(0, 0, 0), 0.5f, 1, 0);
+	shared_ptr<Material> matNormal = make_shared<Material>(vertexShader, normalPS, XMFLOAT3(0, 0, 0), 0.5f, 1, 0);
+	shared_ptr<Material> matCustom = make_shared<Material>(vertexShader, customPS, XMFLOAT3(1, 1, 1), 0.5f, 1, 0);
+	shared_ptr<Material> matTiles = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.1f);
+	shared_ptr<Material> matBrokenTiles = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.1f);
+
+	// Add Textures/Samplers to Materials
+	matTiles->AddTextureSRV("SurfaceTexture", tilesSRV);
+	matTiles->AddTextureSRV("SpecularMap", tilesSpecularSRV);
+	matTiles->AddSampler("BasicSampler", sampler);
+
+	matBrokenTiles->AddTextureSRV("SurfaceTexture", brokenTilesSRV);
+	matBrokenTiles->AddTextureSRV("SpecularMap", brokenTilesSpecularSRV);
+	matBrokenTiles->AddSampler("BasicSampler", sampler);
 
 	// Add material objects to vector
 	materials.push_back(matWhite);
-	materials.push_back(matPurple);
-	materials.push_back(matOrange);
+	//materials.push_back(matPurple);
+	//materials.push_back(matOrange);
 	materials.push_back(matUV);
 	materials.push_back(matNormal);
+	materials.push_back(matTiles);
+	materials.push_back(matBrokenTiles);
 
 	// Make game entities
-	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(cubeMesh, matWhite);
-	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(cylinderMesh, matWhite);
-	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(helixMesh, matWhite);
-	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(sphereMesh, matWhite);
-	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(torusMesh, matWhite);
-	std::shared_ptr<Entity> entity6 = std::make_shared<Entity>(quadMesh, matWhite);
-	std::shared_ptr<Entity> entity7 = std::make_shared<Entity>(quadDoubleSideMesh, matWhite);
+	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(cubeMesh, matBrokenTiles);
+	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(cylinderMesh, matBrokenTiles);
+	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(helixMesh, matBrokenTiles);
+	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(sphereMesh, matTiles);
+	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(torusMesh, matTiles);
+	std::shared_ptr<Entity> entity6 = std::make_shared<Entity>(quadMesh, matTiles);
+	std::shared_ptr<Entity> entity7 = std::make_shared<Entity>(quadDoubleSideMesh, matTiles);
 
 	// Spread out some of the entities so they aren't all on top of one another
 	entity1->GetTransform()->MoveAbsolute(-9, 0, 0);

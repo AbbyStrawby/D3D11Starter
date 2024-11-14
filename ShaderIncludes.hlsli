@@ -9,6 +9,7 @@ struct VertexShaderInput
     float3 localPosition    : POSITION; // XYZ position
     float2 uv               : TEXCOORD; // UV texture coordinate
     float3 normal           : NORMAL;   // Surface normal vector
+    float3 tangent          : TANGENT;   // Vector tangent to the normal
 };
 
 // Struct representing the data we're sending down the pipeline
@@ -18,7 +19,15 @@ struct VertexToPixel
     float4 screenPosition   : SV_POSITION;  // XYZW position (System Value Position)
     float2 uv               : TEXCOORD;     // UV texture coordinate
     float3 normal           : NORMAL;       // Surface normal vector
+    float3 tangent          : TANGENT;      // Vector tangent to the normal
     float3 worldPosition    : POSITION;     // position in world space
+};
+
+// Struct for data in the Skybox shaders
+struct VertexToPixel_Sky
+{
+    float4 screenPosition   : SV_POSITION;  // XYZW position (System Value Position)
+    float3 sampleDir        : DIRECTION;    // Direction to sample from 
 };
 
 // Three types of light

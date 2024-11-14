@@ -15,6 +15,7 @@ cbuffer ExternalData : register(b0)
 
 Texture2D SurfaceTexture : register(t0); // "t" registers for textures
 Texture2D SpecularMap : register(t1); // "t" registers for textures
+Texture2D NormalMap : register(t2); // "t" registers for textures
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
 
 // --------------------------------------------------------
@@ -28,8 +29,14 @@ SamplerState BasicSampler : register(s0); // "s" registers for samplers
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-    // re-normalize the incoming normals
-    input.normal = normalize(input.normal);
+    // re-normalize the incoming normal and tangent
+    float3 N = normalize(input.normal);
+    float3 T = normalize(input.tangent);
+    
+    // Create TBN matrix
+    T = normalize(T - N * dot(T, N)); // Gram-Schmidt assumes T&N are normalized!
+    float3 B = cross(T, N);
+    float3x3 TBN = float3x3(T, B, N);
     
     // Adjust uv coordinates by the scale and offset
     input.uv = input.uv * uvScale + uvOffset;
@@ -38,8 +45,15 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
     surfaceColor *= colorTint;
     
+    // Unpack normal from normal map
+    float3 unpackedNormal = NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1;
+    unpackedNormal = normalize(unpackedNormal);
+    // Transform unpacked normal by the TBN matrix
+    input.normal = mul(unpackedNormal, TBN);
+    
     // Get specular value from Specular Map
-    float specScale = SpecularMap.Sample(BasicSampler, input.uv).r;
+    // Temporarily ignore specular map for this assignment unless I have time to go back to it
+    float specScale = 1; //SpecularMap.Sample(BasicSampler, input.uv).r;
     
     // Final color value to add to with lights
     float3 finalColor = ambient * surfaceColor;

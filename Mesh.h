@@ -22,6 +22,7 @@ private:
 
 	// Helper functions
 	void CreateBuffers(Vertex* vertArray, size_t numVertices, unsigned int* indexArray, size_t numIndices);
+	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
 
 public:
 

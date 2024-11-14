@@ -151,6 +151,10 @@ void Game::LoadShadersAndCreateGeometry()
 		Graphics::Context, FixPath(L"normalPS.cso").c_str());
 	customPS = std::make_shared<SimplePixelShader>(Graphics::Device,
 		Graphics::Context, FixPath(L"customPS.cso").c_str());
+	skyVS = std::make_shared<SimpleVertexShader>(Graphics::Device, 
+		Graphics::Context, FixPath(L"SkyVertexShader.cso").c_str());
+	skyPS = std::make_shared<SimplePixelShader>(Graphics::Device, 
+		Graphics::Context, FixPath(L"SkyPixelShader.cso").c_str());
 
 	// Load 3D Models
 	shared_ptr<Mesh> cubeMesh = make_shared<Mesh>("Cube", FixPath("../../Assets/Models/cube.obj").c_str());
@@ -160,6 +164,7 @@ void Game::LoadShadersAndCreateGeometry()
 	shared_ptr<Mesh> torusMesh = make_shared<Mesh>("Torus", FixPath("../../Assets/Models/torus.obj").c_str());
 	shared_ptr<Mesh> quadMesh = make_shared<Mesh>("Quad", FixPath("../../Assets/Models/quad.obj").c_str());
 	shared_ptr<Mesh> quadDoubleSideMesh = make_shared<Mesh>("Double-Sided Quad", FixPath("../../Assets/Models/quad_double_sided.obj").c_str());
+
 
 	// Load Sampler State
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
@@ -172,20 +177,48 @@ void Game::LoadShadersAndCreateGeometry()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	Graphics::Device.Get()->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
 
+	// Create Sky object
+	skybox = std::make_shared<Sky>(
+		cubeMesh,
+		sampler,
+		skyVS,
+		skyPS,
+		FixPath(L"../../Assets/Skyboxes/Clouds Pink/right.png").c_str(),
+		FixPath(L"../../Assets/Skyboxes/Clouds Pink/left.png").c_str(),
+		FixPath(L"../../Assets/Skyboxes/Clouds Pink/up.png").c_str(),
+		FixPath(L"../../Assets/Skyboxes/Clouds Pink/down.png").c_str(),
+		FixPath(L"../../Assets/Skyboxes/Clouds Pink/front.png").c_str(),
+		FixPath(L"../../Assets/Skyboxes/Clouds Pink/back.png").c_str()
+		);
+
 	// Load textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> flatNormalsSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tilesSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tilesSpecularSRV;
+
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokenTilesSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokenTilesSpecularSRV;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalSRV;
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/flat_normals.png").c_str(), 0, flatNormalsSRV.GetAddressOf());
 
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), 
 		FixPath(L"../../Assets/Textures/tiles.png").c_str(), 0, tilesSRV.GetAddressOf());
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), 
 		FixPath(L"../../Assets/Textures/tiles_specular.png").c_str(), 0, tilesSpecularSRV.GetAddressOf());
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+
 		FixPath(L"../../Assets/Textures/brokentiles.png").c_str(), 0, brokenTilesSRV.GetAddressOf());
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
 		FixPath(L"../../Assets/Textures/brokentiles_specular.png").c_str(), 0, brokenTilesSpecularSRV.GetAddressOf());
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/rock.png").c_str(), 0, rockSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/rock_normals.png").c_str(), 0, rockNormalSRV.GetAddressOf());
 
 	// Create materials before creating entities
 	shared_ptr<Material> matWhite = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0);
@@ -194,17 +227,24 @@ void Game::LoadShadersAndCreateGeometry()
 	shared_ptr<Material> matUV = make_shared<Material>(vertexShader, uvPS, XMFLOAT3(0, 0, 0), 0.5f, 1, 0);
 	shared_ptr<Material> matNormal = make_shared<Material>(vertexShader, normalPS, XMFLOAT3(0, 0, 0), 0.5f, 1, 0);
 	shared_ptr<Material> matCustom = make_shared<Material>(vertexShader, customPS, XMFLOAT3(1, 1, 1), 0.5f, 1, 0);
-	shared_ptr<Material> matTiles = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.1f);
-	shared_ptr<Material> matBrokenTiles = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.1f);
+	shared_ptr<Material> matTiles = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.0f);
+	shared_ptr<Material> matBrokenTiles = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.0f);
+	shared_ptr<Material> matRocks = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.0f);
 
 	// Add Textures/Samplers to Materials
 	matTiles->AddTextureSRV("SurfaceTexture", tilesSRV);
 	matTiles->AddTextureSRV("SpecularMap", tilesSpecularSRV);
+	matTiles->AddTextureSRV("NormalMap", flatNormalsSRV);
 	matTiles->AddSampler("BasicSampler", sampler);
 
 	matBrokenTiles->AddTextureSRV("SurfaceTexture", brokenTilesSRV);
 	matBrokenTiles->AddTextureSRV("SpecularMap", brokenTilesSpecularSRV);
+	matBrokenTiles->AddTextureSRV("NormalMap", flatNormalsSRV);
 	matBrokenTiles->AddSampler("BasicSampler", sampler);
+
+	matRocks->AddTextureSRV("SurfaceTexture", rockSRV);
+	matRocks->AddTextureSRV("NormalMap", rockNormalSRV);
+	matRocks->AddSampler("BasicSampler", sampler);
 
 	// Add material objects to vector
 	materials.push_back(matWhite);
@@ -214,15 +254,16 @@ void Game::LoadShadersAndCreateGeometry()
 	materials.push_back(matNormal);
 	materials.push_back(matTiles);
 	materials.push_back(matBrokenTiles);
+	materials.push_back(matRocks);
 
 	// Make game entities
-	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(cubeMesh, matBrokenTiles);
-	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(cylinderMesh, matBrokenTiles);
-	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(helixMesh, matBrokenTiles);
-	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(sphereMesh, matTiles);
-	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(torusMesh, matTiles);
-	std::shared_ptr<Entity> entity6 = std::make_shared<Entity>(quadMesh, matTiles);
-	std::shared_ptr<Entity> entity7 = std::make_shared<Entity>(quadDoubleSideMesh, matTiles);
+	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(cubeMesh, matRocks);
+	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(cylinderMesh, matRocks);
+	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(helixMesh, matRocks);
+	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(sphereMesh, matRocks);
+	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(torusMesh, matRocks);
+	std::shared_ptr<Entity> entity6 = std::make_shared<Entity>(quadMesh, matRocks);
+	std::shared_ptr<Entity> entity7 = std::make_shared<Entity>(quadDoubleSideMesh, matRocks);
 
 	// Spread out some of the entities so they aren't all on top of one another
 	entity1->GetTransform()->MoveAbsolute(-9, 0, 0);
@@ -321,6 +362,9 @@ void Game::Draw(float deltaTime, float totalTime)
 			e->Draw(cameras[activeCam]);
 		}
 	}
+
+	// Draw skybox
+	skybox->Draw(cameras[activeCam]);
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME

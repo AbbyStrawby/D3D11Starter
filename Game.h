@@ -12,6 +12,7 @@
 #include "Material.h"
 #include "Lights.h"
 #include "WICTextureLoader.h"
+#include "Sky.h"
 
 class Game
 {
@@ -40,7 +41,7 @@ private:
 	bool showDemoUI;
 	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 
-	DirectX::XMFLOAT3 ambientColor = DirectX::XMFLOAT3(0.1f, 0.1f, 0.2f);
+	DirectX::XMFLOAT3 ambientColor = DirectX::XMFLOAT3(0.2f, 0.1f, 0.2f);
 
 	// Vectors to store data for objects in the scene
 	std::vector<std::shared_ptr<Mesh>> meshes;
@@ -57,6 +58,8 @@ private:
 	//     Component Object Model, which DirectX objects do
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 
+	// Skybox object
+	std::shared_ptr<Sky> skybox;
 
 	// Simple shader pointers
 	std::shared_ptr<SimpleVertexShader> vertexShader;
@@ -64,5 +67,7 @@ private:
 	std::shared_ptr<SimplePixelShader> uvPS;
 	std::shared_ptr<SimplePixelShader> normalPS;
 	std::shared_ptr<SimplePixelShader> customPS;
+	std::shared_ptr<SimpleVertexShader> skyVS;
+	std::shared_ptr<SimplePixelShader> skyPS;
 };
 

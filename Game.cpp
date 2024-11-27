@@ -84,25 +84,25 @@ void Game::Initialize()
 	dirLight1.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight1.Direction = XMFLOAT3(1, 0, 0);
 	dirLight1.Color = XMFLOAT3(1.0f, 0.1f, 0.1f);
-	dirLight1.Intensity = 1.0f;
+	dirLight1.Intensity = 0.5f;
 
 	Light dirLight2 = {};
 	dirLight2.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight2.Direction = XMFLOAT3(0, -1, 0);
 	dirLight2.Color = XMFLOAT3(0.1f, 1.0f, 0.1f);
-	dirLight2.Intensity = 1.0f;
+	dirLight2.Intensity = 0.5f;
 
 	Light dirLight3 = {};
 	dirLight3.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight3.Direction = XMFLOAT3(-1, 1, 0);
 	dirLight3.Color = XMFLOAT3(0.1f, 0.1f, 1.0f);
-	dirLight3.Intensity = 1.0f;
+	dirLight3.Intensity = 0.5f;
 
 	Light pointLight1 = {};
 	pointLight1.Type = LIGHT_TYPE_POINT;
 	pointLight1.Position = XMFLOAT3(-1.5f, 0, 0);
 	pointLight1.Color = XMFLOAT3(1, 1, 1);
-	pointLight1.Intensity = 1.0f;
+	pointLight1.Intensity = 0.5f;
 	pointLight1.Range = 8.0f;
 
 	Light pointLight2 = {};
@@ -193,58 +193,76 @@ void Game::LoadShadersAndCreateGeometry()
 
 	// Load textures
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> flatNormalsSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tilesSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tilesSpecularSRV;
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokenTilesSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokenTilesSpecularSRV;
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalSRV;
 
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
 		FixPath(L"../../Assets/Textures/flat_normals.png").c_str(), 0, flatNormalsSRV.GetAddressOf());
 
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), 
-		FixPath(L"../../Assets/Textures/tiles.png").c_str(), 0, tilesSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), 
-		FixPath(L"../../Assets/Textures/tiles_specular.png").c_str(), 0, tilesSpecularSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
-
-		FixPath(L"../../Assets/Textures/brokentiles.png").c_str(), 0, brokenTilesSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
-		FixPath(L"../../Assets/Textures/brokentiles_specular.png").c_str(), 0, brokenTilesSpecularSRV.GetAddressOf());
+	// Rock
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalSRV;
 
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
 		FixPath(L"../../Assets/Textures/rock.png").c_str(), 0, rockSRV.GetAddressOf());
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
 		FixPath(L"../../Assets/Textures/rock_normals.png").c_str(), 0, rockNormalSRV.GetAddressOf());
 
+	// Scratched Surface
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedRoughnessSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedMetalnessSRV;
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/scratched_albedo.png").c_str(), 0, scratchedSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/scratched_normals.png").c_str(), 0, scratchedNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/scratched_roughness.png").c_str(), 0, scratchedRoughnessSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/scratched_metal.png").c_str(), 0, scratchedMetalnessSRV.GetAddressOf());
+
+	// Wood Surface
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodRoughnessSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodMetalnessSRV;
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/wood_albedo.png").c_str(), 0, woodSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/wood_normals.png").c_str(), 0, woodNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/wood_roughness.png").c_str(), 0, woodRoughnessSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/wood_metal.png").c_str(), 0, woodMetalnessSRV.GetAddressOf());
+
 	// Create materials before creating entities
-	shared_ptr<Material> matWhite = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0);
+	shared_ptr<Material> matWhite = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1.0f, 0.0f);
 	//shared_ptr<Material> matPurple = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(0.8f, 0, 0.8f), 0.5f);
 	//shared_ptr<Material> matOrange = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1.0f, 0.5f, 0), 0.5f);
-	shared_ptr<Material> matUV = make_shared<Material>(vertexShader, uvPS, XMFLOAT3(0, 0, 0), 0.5f, 1, 0);
-	shared_ptr<Material> matNormal = make_shared<Material>(vertexShader, normalPS, XMFLOAT3(0, 0, 0), 0.5f, 1, 0);
-	shared_ptr<Material> matCustom = make_shared<Material>(vertexShader, customPS, XMFLOAT3(1, 1, 1), 0.5f, 1, 0);
-	shared_ptr<Material> matTiles = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.0f);
-	shared_ptr<Material> matBrokenTiles = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.0f);
-	shared_ptr<Material> matRocks = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1, 0.0f);
+	shared_ptr<Material> matUV = make_shared<Material>(vertexShader, uvPS, XMFLOAT3(0, 0, 0), 0.5f, 1.0f, 0.0f);
+	shared_ptr<Material> matNormal = make_shared<Material>(vertexShader, normalPS, XMFLOAT3(0, 0, 0), 0.5f, 1.0f, 0.0f);
+	shared_ptr<Material> matCustom = make_shared<Material>(vertexShader, customPS, XMFLOAT3(1, 1, 1), 0.5f, 1.0f, 0.0f);
+	shared_ptr<Material> matRocks = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1.0f, 0.0f);
+	shared_ptr<Material> matScratched = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1.0f, 0.0f);
+	shared_ptr<Material> matWood = make_shared<Material>(vertexShader, pixelShader, XMFLOAT3(1, 1, 1), 0.5f, 1.0f, 0.0f);
 
 	// Add Textures/Samplers to Materials
-	matTiles->AddTextureSRV("SurfaceTexture", tilesSRV);
-	matTiles->AddTextureSRV("SpecularMap", tilesSpecularSRV);
-	matTiles->AddTextureSRV("NormalMap", flatNormalsSRV);
-	matTiles->AddSampler("BasicSampler", sampler);
-
-	matBrokenTiles->AddTextureSRV("SurfaceTexture", brokenTilesSRV);
-	matBrokenTiles->AddTextureSRV("SpecularMap", brokenTilesSpecularSRV);
-	matBrokenTiles->AddTextureSRV("NormalMap", flatNormalsSRV);
-	matBrokenTiles->AddSampler("BasicSampler", sampler);
-
-	matRocks->AddTextureSRV("SurfaceTexture", rockSRV);
+	matRocks->AddTextureSRV("Albedo", rockSRV);
 	matRocks->AddTextureSRV("NormalMap", rockNormalSRV);
 	matRocks->AddSampler("BasicSampler", sampler);
+
+	matScratched->AddTextureSRV("Albedo", scratchedSRV);
+	matScratched->AddTextureSRV("NormalMap", scratchedNormalSRV);
+	matScratched->AddTextureSRV("RoughnessMap", scratchedRoughnessSRV);
+	matScratched->AddTextureSRV("MetalnessMap", scratchedMetalnessSRV);
+	matScratched->AddSampler("BasicSampler", sampler);
+
+	matWood->AddTextureSRV("Albedo", woodSRV);
+	matWood->AddTextureSRV("NormalMap", woodNormalSRV);
+	matWood->AddTextureSRV("RoughnessMap", woodRoughnessSRV);
+	matWood->AddTextureSRV("MetalnessMap", woodMetalnessSRV);
+	matWood->AddSampler("BasicSampler", sampler);
 
 	// Add material objects to vector
 	materials.push_back(matWhite);
@@ -252,18 +270,18 @@ void Game::LoadShadersAndCreateGeometry()
 	//materials.push_back(matOrange);
 	materials.push_back(matUV);
 	materials.push_back(matNormal);
-	materials.push_back(matTiles);
-	materials.push_back(matBrokenTiles);
 	materials.push_back(matRocks);
+	materials.push_back(matScratched);
+	materials.push_back(matWood);
 
 	// Make game entities
-	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(cubeMesh, matRocks);
-	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(cylinderMesh, matRocks);
-	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(helixMesh, matRocks);
-	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(sphereMesh, matRocks);
-	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(torusMesh, matRocks);
-	std::shared_ptr<Entity> entity6 = std::make_shared<Entity>(quadMesh, matRocks);
-	std::shared_ptr<Entity> entity7 = std::make_shared<Entity>(quadDoubleSideMesh, matRocks);
+	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(cubeMesh, matScratched);
+	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(cylinderMesh, matWood);
+	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(helixMesh, matScratched);
+	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(sphereMesh, matScratched);
+	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(torusMesh, matWood);
+	std::shared_ptr<Entity> entity6 = std::make_shared<Entity>(quadMesh, matScratched);
+	std::shared_ptr<Entity> entity7 = std::make_shared<Entity>(quadDoubleSideMesh, matScratched);
 
 	// Spread out some of the entities so they aren't all on top of one another
 	entity1->GetTransform()->MoveAbsolute(-9, 0, 0);
@@ -355,7 +373,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		for (std::shared_ptr<Entity> e : entities) {
 			// Set pixel shader data
 			std::shared_ptr<SimplePixelShader> ps = e->GetMaterial()->GetPixelShader();
-			ps->SetFloat3("ambient", ambientColor);
 			ps->SetData("lights", &lights[0], sizeof(Light) * (int)lights.size());
 
 			// Draw the entity
@@ -551,9 +568,6 @@ void Game::BuildUI(float deltaTime)
 
 	if (ImGui::TreeNode("Lights"))
 	{
-		// Ambient Color
-		ImGui::Spacing();
-		ImGui::ColorEdit3("Ambient Color", &ambientColor.x);
 		ImGui::Spacing();
 
 		for (int i = 0; i < lights.size(); i++) {

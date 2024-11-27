@@ -41,8 +41,6 @@ private:
 	bool showDemoUI;
 	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 
-	DirectX::XMFLOAT3 ambientColor = DirectX::XMFLOAT3(0.2f, 0.1f, 0.2f);
-
 	// Vectors to store data for objects in the scene
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::shared_ptr<Material>> materials;

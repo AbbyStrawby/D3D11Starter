@@ -15,7 +15,10 @@ Texture2D Albedo            : register(t0);
 Texture2D NormalMap         : register(t1);
 Texture2D RoughnessMap      : register(t2);
 Texture2D MetalnessMap      : register(t3);
-SamplerState BasicSampler   : register(s0);
+Texture2D ShadowMap         : register(t4);
+
+SamplerState            BasicSampler    : register(s0);
+SamplerComparisonState  ShadowSampler   : register(s1);
 
 
 // --------------------------------------------------------
@@ -29,6 +32,23 @@ SamplerState BasicSampler   : register(s0);
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+    // Check for shadows
+    // Perform the perspective divide (divide by W) ourselves
+    input.shadowMapPos /= input.shadowMapPos.w;
+    
+    // Convert the normalized device coordinates to UVs for sampling
+    float2 shadowUV = input.shadowMapPos.xy * 0.5f + 0.5f;
+    shadowUV.y = 1 - shadowUV.y; // Flip the Y
+    
+    // Grab the distances we need: light-to-pixel and closest-surface
+    float distToLight = input.shadowMapPos.z;
+   
+    // Get a ratio of comparison results using SampleCmpLevelZero()
+    float shadowAmount = ShadowMap.SampleCmpLevelZero(
+        ShadowSampler,
+        shadowUV,
+        distToLight).r;
+    
     // re-normalize the incoming normal and tangent
     float3 N = normalize(input.normal);
     float3 T = normalize(input.tangent);
@@ -62,7 +82,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 specularColor = lerp(F0_NON_METAL, albedoColor.rgb, metalness);
     
     // Final color value to add to with lights
-    float3 finalColor = albedoColor.rgb;
+    float3 finalColor = float3(0, 0, 0);
     
     // Loop through lights
     for (int i = 0; i < 5; i++)
@@ -74,9 +94,18 @@ float4 main(VertexToPixel input) : SV_TARGET
         // Check what type of light needs to be calculated
         switch (light.Type)
         {
-            case LIGHT_TYPE_DIRECTIONAL:
-                finalColor += DirectionalLight(light, input.normal, cameraPosition, input.worldPosition,
+            case LIGHT_TYPE_DIRECTIONAL:            
+                float3 lightResult = DirectionalLight(light, input.normal, cameraPosition, input.worldPosition,
                     roughness, metalness, albedoColor, specularColor);
+            
+                // If this is the first light, apply the shadowing result
+                if (i == 0)
+                {
+                    lightResult *= shadowAmount;
+                }
+                // Add this light's result to the total light for this pixel
+                finalColor += lightResult;
+            
                 break;
             case LIGHT_TYPE_POINT :
                 finalColor += PointLight(light, input.normal, cameraPosition, input.worldPosition,

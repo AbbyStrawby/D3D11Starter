@@ -16,11 +16,12 @@ struct VertexShaderInput
 // - At a minimum, we need a piece of data defined tagged as SV_POSITION
 struct VertexToPixel
 {
-    float4 screenPosition   : SV_POSITION;  // XYZW position (System Value Position)
-    float2 uv               : TEXCOORD;     // UV texture coordinate
-    float3 normal           : NORMAL;       // Surface normal vector
-    float3 tangent          : TANGENT;      // Vector tangent to the normal
-    float3 worldPosition    : POSITION;     // position in world space
+    float4 screenPosition   : SV_POSITION;      // XYZW position (System Value Position)
+    float2 uv               : TEXCOORD;         // UV texture coordinate
+    float3 normal           : NORMAL;           // Surface normal vector
+    float3 tangent          : TANGENT;          // Vector tangent to the normal
+    float3 worldPosition    : POSITION;         // position in world space
+    float4 shadowMapPos     : SHADOW_POSITION;  // position in the shadow map
 };
 
 // Struct for data in the Skybox shaders

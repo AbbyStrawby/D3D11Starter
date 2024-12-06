@@ -8,6 +8,8 @@ cbuffer ExternalData : register(b0)
     matrix view;
     matrix projection;
     matrix worldInvTranspose;
+    matrix lightView;
+    matrix lightProjection;
 }
 
 // --------------------------------------------------------
@@ -32,6 +34,10 @@ VertexToPixel main( VertexShaderInput input )
 	//   a perspective projection matrix, which we'll get to in the future).
     matrix wvp = mul(projection, mul(view, world));
     output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
+	
+	// Calculate WVP for shadow map
+    matrix shadowWVP = mul(lightProjection, mul(lightView, world));
+    output.shadowMapPos = mul(shadowWVP, float4(input.localPosition, 1.0f));
 	
 	// Send other vertex data through the pipeline
     output.uv = input.uv;

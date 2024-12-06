@@ -34,6 +34,9 @@ private:
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShadersAndCreateGeometry();
 
+	void CreateShadowMapResources();
+	void RenderShadowMap();
+
 	void UIUpdate(float deltaTime);
 	void BuildUI(float deltaTime);
 
@@ -67,5 +70,16 @@ private:
 	std::shared_ptr<SimplePixelShader> customPS;
 	std::shared_ptr<SimpleVertexShader> skyVS;
 	std::shared_ptr<SimplePixelShader> skyPS;
+	std::shared_ptr<SimpleVertexShader> shadowVS;
+
+	// Shadow Map resources
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
+	DirectX::XMFLOAT4X4 lightViewMatrix;
+	DirectX::XMFLOAT4X4 lightProjectionMatrix;
+
+	int shadowMapResolution;
 };
 

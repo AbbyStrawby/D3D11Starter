@@ -160,6 +160,12 @@ void Game::LoadShadersAndCreateGeometry()
 		Graphics::Context, FixPath(L"SkyPixelShader.cso").c_str());
 	shadowVS = std::make_shared<SimpleVertexShader>(Graphics::Device, 
 		Graphics::Context, FixPath(L"ShadowVS.cso").c_str());
+	ppVS = std::make_shared<SimpleVertexShader>(Graphics::Device,
+		Graphics::Context, FixPath(L"PostProcessVS.cso").c_str());
+	ppPS = std::make_shared<SimplePixelShader>(Graphics::Device,
+		Graphics::Context, FixPath(L"PostProcessBlurPS.cso").c_str());
+	cappPS = std::make_shared<SimplePixelShader>(Graphics::Device,
+		Graphics::Context, FixPath(L"PostProcessChromaticAberationPS.cso").c_str());
 
 	// Load 3D Models
 	shared_ptr<Mesh> cubeMesh = make_shared<Mesh>("Cube", FixPath("../../Assets/Models/cube.obj").c_str());
@@ -307,6 +313,105 @@ void Game::LoadShadersAndCreateGeometry()
 	entities.push_back(entity5);
 	entities.push_back(entity6);
 	entities.push_back(entity7);
+
+	// Post Process Setup
+	CreateResizePostProcess();
+
+	// Sampler state for post processing
+	D3D11_SAMPLER_DESC ppSampDesc = {};
+	ppSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	ppSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Graphics::Device->CreateSamplerState(&ppSampDesc, ppSampler.GetAddressOf());
+}
+
+// Create Post Process Resources 
+// Called after each window resize
+void Game::CreateResizePostProcess()
+{
+	// Reset SRV and RTV views if they exist
+	ppSRV.Reset();
+	ppRTV.Reset();
+	cappSRV.Reset();
+	cappRTV.Reset();
+
+	// Describe the texture we're creating
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = Window::Width();
+	textureDesc.Height = Window::Height();
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	// Create the resource (no need to track it after the views are created below)
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> ppTexture;
+	Graphics::Device->CreateTexture2D(&textureDesc, 0, ppTexture.GetAddressOf());
+
+	// Create the Render Target View
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.Texture2D.MipSlice = 0;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Graphics::Device->CreateRenderTargetView(
+		ppTexture.Get(),
+		&rtvDesc,
+		ppRTV.ReleaseAndGetAddressOf());
+
+	// Create the Shader Resource View
+	// By passing it a null description for the SRV, we
+	// get a "default" SRV that has access to the entire resource
+	Graphics::Device->CreateShaderResourceView(
+		ppTexture.Get(),
+		0,
+		ppSRV.ReleaseAndGetAddressOf());
+
+
+
+	// Repeat for chromatic aberation
+
+	// Describe the texture we're creating
+	D3D11_TEXTURE2D_DESC textureDescCA = {};
+	textureDescCA.Width = Window::Width();
+	textureDescCA.Height = Window::Height();
+	textureDescCA.ArraySize = 1;
+	textureDescCA.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDescCA.CPUAccessFlags = 0;
+	textureDescCA.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDescCA.MipLevels = 1;
+	textureDescCA.MiscFlags = 0;
+	textureDescCA.SampleDesc.Count = 1;
+	textureDescCA.SampleDesc.Quality = 0;
+	textureDescCA.Usage = D3D11_USAGE_DEFAULT;
+
+	// Create the resource (no need to track it after the views are created below)
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> cappTexture;
+	Graphics::Device->CreateTexture2D(&textureDescCA, 0, cappTexture.GetAddressOf());
+
+	// Create the Render Target View
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDescCA = {};
+	rtvDescCA.Format = textureDescCA.Format;
+	rtvDescCA.Texture2D.MipSlice = 0;
+	rtvDescCA.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Graphics::Device->CreateRenderTargetView(
+		cappTexture.Get(),
+		&rtvDescCA,
+		cappRTV.ReleaseAndGetAddressOf());
+
+	// Create the Shader Resource View
+	// By passing it a null description for the SRV, we
+	// get a "default" SRV that has access to the entire resource
+	Graphics::Device->CreateShaderResourceView(
+		cappTexture.Get(),
+		0,
+		cappSRV.ReleaseAndGetAddressOf());
 }
 
 void Game::CreateShadowMapResources()
@@ -400,6 +505,10 @@ void Game::OnResize()
 	for (std::shared_ptr<Camera> c : cameras) {
 		c->UpdateProjectionMatrix((float)Window::Width() / Window::Height());
 	}
+
+	// Re-Create Post Process Resourcees
+	if (Graphics::Device)
+		CreateResizePostProcess();
 }
 
 
@@ -462,6 +571,14 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Render shadow map first before drawing geometry
 	RenderShadowMap();
 
+	// Post Processing Pre Draw ===============
+	// Clear render targets
+	const float clearColor[4] = { 0, 0, 0, 1 };
+	Graphics::Context->ClearRenderTargetView(ppRTV.Get(), clearColor);
+
+	// Swap Active Render Target
+	Graphics::Context->OMSetRenderTargets(1, ppRTV.GetAddressOf(), Graphics::DepthBufferDSV.Get());
+
 	// DRAW geometry
 	// Loop through and draw every mesh
 	{
@@ -485,6 +602,44 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Draw skybox
 	skybox->Draw(cameras[activeCam]);
 
+	// Post Processing Post Draw ===========
+	// Restore Back Buffer
+	Graphics::Context->OMSetRenderTargets(1, cappRTV.GetAddressOf(), 0);
+
+	// Activate shaders and bind resources
+	ppVS->SetShader();
+	ppPS->SetShader();
+	ppPS->SetShaderResourceView("Pixels", ppSRV.Get());
+	ppPS->SetSamplerState("ClampSampler", ppSampler.Get());
+
+	// Also set any required cbuffer data
+	ppPS->SetFloat("pixelWidth", 1.0f / Window::Width());
+	ppPS->SetFloat("pixelHeight", 1.0f / Window::Height());
+	ppPS->SetInt("blurRadius", blurDistance);
+	ppPS->CopyAllBufferData();
+
+	Graphics::Context->Draw(3, 0); // Draw exactly 3 vertices (one triangle)
+
+	// Repeat for Chromatic Aberation
+	// Restore Back Buffer
+	Graphics::Context->OMSetRenderTargets(1, Graphics::BackBufferRTV.GetAddressOf(), 0);
+
+	// Activate shaders and bind resources
+	cappPS->SetShader();
+	cappPS->SetShaderResourceView("Pixels", cappSRV.Get());
+	cappPS->SetSamplerState("ClampSampler", ppSampler.Get());
+
+	// Also set any required cbuffer data
+	cappPS->SetFloat("pixelWidth", 1.0f / Window::Width());
+	cappPS->SetFloat("pixelHeight", 1.0f / Window::Height());
+	cappPS->SetFloat("redOffset", redOffset);
+	cappPS->SetFloat("greenOffset", greenOffset);
+	cappPS->SetFloat("blueOffset", blueOffset);
+	cappPS->CopyAllBufferData();
+
+	Graphics::Context->Draw(3, 0); // Draw exactly 3 vertices (one triangle)
+
+	
 	// Unbind shadow map (and any other SRVs)
 	ID3D11ShaderResourceView* nullSRVs[128] = {};
 	Graphics::Context->PSSetShaderResources(0, 128, nullSRVs);
@@ -765,6 +920,18 @@ void Game::BuildUI(float deltaTime)
 		ImGui::TreePop();
 	}
 	
+	ImGui::Spacing();
+	
+	ImGui::SliderInt("Blur Distance", &blurDistance, 0, 25);
+
+	ImGui::Spacing();
+
+	ImGui::SliderFloat("Red Offset", &redOffset, -0.01f, 0.01f);
+	ImGui::SliderFloat("Green Offset", &greenOffset, -0.01f, 0.01f);
+	ImGui::SliderFloat("Blue Offset", &blueOffset, -0.01f, 0.01f);
+
+	ImGui::Spacing();
+
 	ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
 
 	

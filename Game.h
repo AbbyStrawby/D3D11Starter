@@ -37,6 +37,8 @@ private:
 	void CreateShadowMapResources();
 	void RenderShadowMap();
 
+	void CreateResizePostProcess();
+
 	void UIUpdate(float deltaTime);
 	void BuildUI(float deltaTime);
 
@@ -81,5 +83,24 @@ private:
 	DirectX::XMFLOAT4X4 lightProjectionMatrix;
 
 	int shadowMapResolution;
+
+	// Post process resources
+	// Resources that are shared among all post processes
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+	std::shared_ptr<SimpleVertexShader> ppVS;
+
+	// Resources that are tied to a particular post process
+	std::shared_ptr<SimplePixelShader> ppPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ppRTV; // For rendering
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ppSRV; // For sampling
+	int blurDistance = 5;
+
+	std::shared_ptr<SimplePixelShader> cappPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> cappRTV; // For rendering
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cappSRV; // For sampling
+	float redOffset		=  0.009f;
+	float greenOffset	=  0.003f;
+	float blueOffset	= -0.006f;
+
 };
 
